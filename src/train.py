@@ -19,11 +19,11 @@ class Trainer:
 
         #Create Model
         self.model=DraftModel(
-            num_heroes=config['model']['num_heroes']
-            embedding_dim=config['model']['embedding_dim']
-            num_layers=config['model']['num_layers']
-            num_heads=config['model']['num_heads']
-            dropout=config['model']['dropout']
+            num_heroes=config['model']['num_heroes'],
+            embedding_dim=config['model']['embedding_dim'],
+            num_layers=config['model']['num_layers'],
+            num_heads=config['model']['num_heads'],
+            dropout=config['model']['dropout'],
         ).to(self.device)
 
         #Loss functions

@@ -1,0 +1,28 @@
+# Model Configuration
+model:
+  num_heroes: 124
+  embedding_dim: 128
+  num_layers: 4
+  num_heads: 8
+  dropout: 0.2
+
+# Training Configuration
+training:
+  batch_size: 32
+  learning_rate: 0.0001
+  num_epochs: 50
+  device: "cuda"  # or "cpu"
+  early_stopping_patience: 5
+
+# Data Configuration
+data:
+  num_matches: 10000
+  val_split: 0.15
+  test_split: 0.15
+  min_draft_length: 20
+
+# Paths
+paths:
+  data_dir: "data"
+  model_dir: "models"
+  log_dir: "logs"
