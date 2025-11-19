@@ -15,7 +15,7 @@ def main():
     setup_logging()
 
     #Process data
-    collector=DataCollector(config['paths']['data_dir'])
+    collector=DataCollector(config['path']['data_dir'])
     collector.process_matches(
         val_split=config['data']['val_split'],
         test_split=config['data']['test_split']
