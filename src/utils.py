@@ -6,7 +6,7 @@ def setup_logging(log_file: str=None):
     handlers=[logging.StreamHandler()]
     if log_file:
         Path(log_file).parent.mkdir(parents=True, exist_ok=True)
-        handlers.append(logging.FileHandle(log_file))
+        handlers.append(logging.FileHandler(log_file))
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

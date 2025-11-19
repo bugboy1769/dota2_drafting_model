@@ -13,13 +13,13 @@ def main():
         config=yaml.safe_load(f)
     
     #Setup logging
-    log_file=Path(config['paths']['log_dir'])/'training.log'
+    log_file=Path(config['path']['log_dir'])/'training.log'
     log_file.parent.mkdir(parents=True, exist_ok=True)
     setup_logging(str(log_file))
 
     #Check device
     if config['training']['device']=='cuda' and not torch.cuda.is_available():
-        print("CUDA not available, suing CPU")
+        print("CUDA not available, using CPU")
         config['training']['device']='cpu'
     
     print(f"Using device: {config['training']['device']}")

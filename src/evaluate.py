@@ -4,7 +4,7 @@ from pathlib import Path
 import yaml
 from tqdm import tqdm
 
-from .model import DraftModel
+from src.model import DraftModel
 from .dataset import DraftDataset
 from .utils import load_checkpoint
 
@@ -20,7 +20,7 @@ def evaluate_model(config_path:str, model_path:str):
     model=DraftModel(
         num_heroes=config['model']['num_heroes'],
         embedding_dim=config['model']['embedding_dim'],
-        num_layers=config['model']['num_layer'],
+        num_layers=config['model']['num_layers'],
         num_heads=config['model']['num_heads']
     ).to(device)
 

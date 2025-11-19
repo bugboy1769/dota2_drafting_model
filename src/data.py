@@ -97,7 +97,7 @@ class DataCollector:
         for match_file in tqdm(match_files, desc="Processing matches"):
             with open(match_file, 'r') as f:
                 match_data=json.load(f)
-            examples=self._create_example_from_matches(match_data)
+            examples=self._create_examples_from_match(match_data)
             all_examples.extend(examples)
         
         #Shuffle and split
@@ -120,41 +120,60 @@ class DataCollector:
             pickle.dump(test_examples, f)
         self.logger.info(f"Saved {len(train_examples)} train, {len(val_examples)} val, {len(test_examples)} test examples")
 
-    def _create_examples_from_match(self, match_data: Dict)->List[Dict]:
-        """Create training examples from a single match"""
-        picks_bans=match_data.get('picks_bans', [])
-        if len(picks_bans)<20:
+    def _create_examples_from_match(self, match_data: Dict) -> List[Dict]:
+        """Create training examples from a single match."""
+        picks_bans = match_data.get('picks_bans', [])
+        if len(picks_bans) < 20:
             return []
-        radiant_win=match_data.get('radiant_win', False)
-        examples=[]
-
-        for step in range(len(picks_bans)):
-            history=picks_bans[:step]
-            current_action=picks_bans[step]
-
-            #Build hero sequence, pad to 24
-            hero_sequence=[0] * 24
-            for i, action in enumerate(history):
-                hero_sequence[i]=action['hero_id']
-            
-            #Track available heroes
-            picked_banned=set(action['hero_id'] for action in history)
-            valid_actions=[hero_id not in picked_banned for hero_id in range(1, 125)]
-
-            #Determine action based on team
-            team=current_action['team']
-            outcome=1.0 if (team==0 and radiant_win) or (team==1 and not radiant_win) else 0.0
-
-            examples.append({
-                'hero_sequence':hero_sequence,
-                'valid_actions':valid_actions,
-                'target_actions': current_action['hero_id'] - 1, #0-indexed
-                'outcome':outcome,
-                'team':team,
-                'is_pick':int(current_action['is_pick'])
-            })
-            
-            return examples
-    
         
+        # First pass: collect all hero IDs and filter valid ones
+        valid_hero_ids = set()
+        for action in picks_bans:
+            hero_id = action['hero_id']
+            if 1 <= hero_id <= 124:  # Only accept valid heroes
+                valid_hero_ids.add(hero_id)
+        
+        # If too few valid heroes, skip this match
+        if len([a for a in picks_bans if 1 <= a['hero_id'] <= 124]) < 20:
+            return []
+        
+        radiant_win = match_data.get('radiant_win', False)
+        examples = []
+        
+        for step in range(len(picks_bans)):
+            current_action = picks_bans[step]
+            hero_id = current_action['hero_id']
+            
+            # CRITICAL: Skip if hero_id is invalid
+            if hero_id < 1 or hero_id > 124:
+                continue
+            
+            # Build history (only valid heroes)
+            history = [a for a in picks_bans[:step] if 1 <= a['hero_id'] <= 124]
+            
+            # Build hero sequence (pad to 24)
+            hero_sequence = [0] * 24
+            for i, action in enumerate(history[:24]):  # Cap at 24
+                hero_sequence[i] = action['hero_id']
+            
+            # Track available heroes
+            picked_banned = set(action['hero_id'] for action in history)
+            valid_actions = [hero_id not in picked_banned for hero_id in range(1, 125)]
+            
+            # Determine outcome based on team
+            team = current_action['team']
+            outcome = 1.0 if (team == 0 and radiant_win) or (team == 1 and not radiant_win) else 0.0
+            
+            examples.append({
+                'hero_sequence': hero_sequence,
+                'valid_actions': valid_actions,
+                'target_actions': hero_id - 1,  # Now guaranteed to be 0-123
+                'outcome': outcome,
+                'team': team,
+                'is_pick': int(current_action['is_pick'])
+            })
+        
+        return examples
+        
+            
 

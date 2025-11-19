@@ -33,24 +33,31 @@ class Trainer:
         #Optimizer
         self.optimizer=torch.optim.AdamW(
             self.model.parameters(),
-            lr=config['model']['learning_rate']
+            lr=config['training']['learning_rate']
         )
 
         #Scheduler
         self.scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(
             self.optimizer,
-            T_max=config['model']['num_epochs']
+            T_max=config['training']['num_epochs']
         )
 
         #Dataloaders
-        data_dir=Path(config['paths']['data_dir'])/"processed"
+        data_dir=Path(config['path']['data_dir'])/"processed"
         train_dataset=DraftDataset(data_dir/"train.pkl")
         val_dataset=DraftDataset(data_dir/"val.pkl")
 
         self.train_loader=DataLoader(
-            val_dataset,
+            train_dataset,
             batch_size=config['training']['batch_size'],
             shuffle=True,
+            num_workers=2
+        )
+
+        self.val_loader=DataLoader(
+            val_dataset,
+            batch_size=config['training']['batch_size'],
+            shuffle=False,
             num_workers=2
         )
 
@@ -66,7 +73,7 @@ class Trainer:
         for batch in tqdm(self.train_loader, desc="Training"):
             hero_seq=batch['hero_sequence'].to(self.device)
             valid_actions=batch['valid_actions'].to(self.device)
-            target_action=batch['target_action'].to(self.device)
+            target_action=batch['target_actions'].to(self.device)
             outcome=batch['outcome'].to(self.device)
 
             #Forward pass
@@ -98,19 +105,19 @@ class Trainer:
             for batch in tqdm(self.val_loader, desc="Validating"):
                 hero_seq=batch['hero_sequence'].to(self.device)
                 valid_actions=batch['valid_actions'].to(self.device)
-                target_action=batch['target_action'].to(self.device)
+                target_actions=batch['target_actions'].to(self.device)
                 outcome=batch['outcome'].to(self.device)
 
                 action_logits, win_prob=self.model(hero_seq, valid_actions)
 
-                policy_loss=self.policy_criterion(action_logits, target_action)
+                policy_loss=self.policy_criterion(action_logits, target_actions)
                 value_loss=self.value_criterion(win_prob.squeeze(), outcome)
                 loss=policy_loss+0.5*value_loss
 
                 total_loss+=loss.item()
                 predictions=torch.argmax(action_logits, dim=1)
-                correct+=(predictions==target_action).sum().item()
-                total+=target_action.size(0)
+                correct+=(predictions==target_actions).sum().item()
+                total+=target_actions.size(0)
         
         return {
             'val_loss':total_loss/len(self.val_loader),
@@ -144,7 +151,7 @@ class Trainer:
                 self.best_val_loss=val_metrics['val_loss']
                 self.epochs_without_improvement=0
 
-                model_path=Path(self.config['paths']['model_dir'])
+                model_path=Path(self.config['path']['model_dir'])
                 save_checkpoint(self.model, self.optimizer, epoch, val_metrics, model_path)
                 self.logger.info(f"Best Model Saved!")
             else:

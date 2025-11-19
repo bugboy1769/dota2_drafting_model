@@ -51,8 +51,8 @@ class DraftPredictor:
         valid_actions=[hero_id not in picked_banned for hero_id in range(1, 125)]
 
         #Convert to tensors
-        hero_seq_tensor=torch.tensor([hero_sequence], dtype=torch.long.to(self.device))
-        valid_actions_tensor=torch.tensor([valid_actions], dtype=torch.bool.to(self.device))
+        hero_seq_tensor=torch.tensor([hero_sequence], dtype=torch.long).to(self.device)
+        valid_actions_tensor=torch.tensor([valid_actions], dtype=torch.bool).to(self.device)
 
         #Predict
         with torch.no_grad():

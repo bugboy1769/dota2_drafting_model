@@ -10,8 +10,8 @@ model:
 training:
   batch_size: 32
   learning_rate: 0.0001
-  num_epochs: 50
-  device: "cuda"  # or "cpu"
+  num_epochs: 10
+  device: "cpu"  # or "cpu"
   early_stopping_patience: 5
 
 # Data Configuration
@@ -22,7 +22,7 @@ data:
   min_draft_length: 20
 
 # Paths
-paths:
+path:
   data_dir: "data"
   model_dir: "models"
   log_dir: "logs"

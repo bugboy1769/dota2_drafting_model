@@ -18,7 +18,7 @@ class DraftDataset(Dataset):
         return {
             'hero_sequence': torch.tensor(example['hero_sequence'], dtype=torch.long),
             'valid_actions': torch.tensor(example['valid_actions'], dtype=torch.bool),
-            'target_action': torch.tensor(example['target_action'], dtype=torch.long),
-            'outcome': torch.tensor(example['target_action'], dtype=torch.float32),
+            'target_actions': torch.tensor(example['target_actions'], dtype=torch.long),
+            'outcome': torch.tensor(example['outcome'], dtype=torch.float32),
             'team': torch.tensor(example['team'], dtype=torch.long)
         }
