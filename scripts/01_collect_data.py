@@ -9,7 +9,7 @@ from src.utils import setup_logging
 
 def main():
     parser=argparse.ArgumentParser(description='Collect Dota2 match data')
-    parser.add_argument('--num-matches', type=int, default=2500, help='Number of matches to collect')
+    parser.add_argument('--num-matches', type=int, default=10000, help='Number of matches to collect')
     parser.add_argument('--config', type=str, default='config.yaml')
     args=parser.parse_args()
 

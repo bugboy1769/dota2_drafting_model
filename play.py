@@ -74,21 +74,43 @@ class DraftSession:
         for i, h_id in enumerate(self.history):
             sequence[i]=h_id
         
+        # Standard Captain's Mode Draft Order (Team 0=Radiant, Team 1=Dire)
+        # (is_pick, team)
+        DRAFT_ORDER = [
+            (0, 0), (0, 1), (0, 0), (0, 1), # First Ban Phase (4 bans)
+            (1, 0), (1, 1), (1, 1), (1, 0), # First Pick Phase (4 picks)
+            (0, 0), (0, 1), (0, 0), (0, 1), # Second Ban Phase (4 bans)
+            (1, 1), (1, 0), (1, 1), (1, 0), # Second Pick Phase (4 picks)
+            (0, 0), (0, 1), (0, 0), (0, 1), # Third Ban Phase (4 bans)
+            (1, 0), (1, 1)                  # Third Pick Phase (2 picks)
+        ]
+
+        #Build type and team sequences based on fixed order
+        type_sequence=[0]*24
+        team_sequence=[0]*24
+        
+        for i in range(min(len(self.history), 24)):
+            is_pick, team = DRAFT_ORDER[i]
+            type_sequence[i] = is_pick
+            team_sequence[i] = team
+        
         #Create the mask. True:Available, False:NA
-        valid_actions=[True]*124
+        valid_actions=[True]*150
         for h_id in self.history:
-            if 1<=h_id<=124:
+            if 1<=h_id<=150:
                 valid_actions[h_id-1]=False
         
         #B. Convert to tensor and batch
         seq_tensor=torch.tensor([sequence], dtype=torch.long).to(self.device)
-        valid_tensor=torch.tensor([valid_actions], dtype=torch.long).to(self.device)
+        type_tensor=torch.tensor([type_sequence], dtype=torch.long).to(self.device)
+        team_tensor=torch.tensor([team_sequence], dtype=torch.long).to(self.device)
+        valid_tensor=torch.tensor([valid_actions], dtype=torch.bool).to(self.device)
 
         #C. Forward Pass
         with torch.no_grad():
             #action_logits -> raw scores for next pick
             #win_prob -> value heads prediction for winning with predicted state
-            action_logits, win_prob=self.model(seq_tensor, valid_tensor)
+            action_logits, win_prob, role_logit=self.model(seq_tensor, type_tensor, team_tensor, valid_tensor)
         
         #D. Process Output
         #Apply softmax for percentages

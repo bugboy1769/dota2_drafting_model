@@ -29,6 +29,7 @@ class Trainer:
         #Loss functions
         self.policy_criterion=nn.CrossEntropyLoss()
         self.value_criterion=nn.BCELoss()
+        self.role_criterion=nn.CrossEntropyLoss(ignore_index=0) # Ignore padding/bans
 
         #Optimizer
         self.optimizer=torch.optim.AdamW(
@@ -37,11 +38,6 @@ class Trainer:
         )
 
         #Scheduler
-        self.scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(
-            self.optimizer,
-            T_max=config['training']['num_epochs']
-        )
-
         #Dataloaders
         data_dir=Path(config['path']['data_dir'])/"processed"
         train_dataset=DraftDataset(data_dir/"train.pkl")
@@ -61,6 +57,14 @@ class Trainer:
             num_workers=2
         )
 
+        #Scheduler
+        self.scheduler=torch.optim.lr_scheduler.OneCycleLR(
+            self.optimizer,
+            max_lr=config['training']['learning_rate'],
+            epochs=config['training']['num_epochs'],
+            steps_per_epoch=len(self.train_loader)
+        )
+
         #Training state
         self.best_val_loss=float('inf')
         self.epochs_without_improvement=0
@@ -72,23 +76,34 @@ class Trainer:
 
         for batch in tqdm(self.train_loader, desc="Training"):
             hero_seq=batch['hero_sequence'].to(self.device)
+            type_seq=batch['type_sequence'].to(self.device)
+            team_seq=batch['team_sequence'].to(self.device)
+            role_seq=batch['role_sequence'].to(self.device) # New
             valid_actions=batch['valid_actions'].to(self.device)
             target_action=batch['target_actions'].to(self.device)
             outcome=batch['outcome'].to(self.device)
 
             #Forward pass
-            action_logits, win_prob=self.model(hero_seq, valid_actions)
+            action_logits, win_prob, role_logits = self.model(hero_seq, type_seq, team_seq, valid_actions)
 
             #Compute losses
             policy_loss=self.policy_criterion(action_logits, target_action)
             value_loss=self.value_criterion(win_prob.squeeze(), outcome)
-            loss=policy_loss+0.5*value_loss
+            
+            # Role Loss: Flatten [Batch, Seq] -> [Batch*Seq]
+            role_loss = self.role_criterion(role_logits.view(-1, 6), role_seq.view(-1))
+            
+            # Total Loss (Weighted)
+            loss=policy_loss + 0.5*value_loss + 0.2*role_loss
 
             #Backward pass
             self.optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
             self.optimizer.step()
+            
+            #Step scheduler every batch for OneCycleLR
+            self.scheduler.step()
 
             total_loss+=loss.item()
         
@@ -99,29 +114,43 @@ class Trainer:
         self.model.eval()
         total_loss=0
         correct=0
+        correct_top5=0
         total=0
 
         with torch.no_grad():
             for batch in tqdm(self.val_loader, desc="Validating"):
                 hero_seq=batch['hero_sequence'].to(self.device)
+                type_seq=batch['type_sequence'].to(self.device)
+                team_seq=batch['team_sequence'].to(self.device)
+                role_seq=batch['role_sequence'].to(self.device) # New
                 valid_actions=batch['valid_actions'].to(self.device)
                 target_actions=batch['target_actions'].to(self.device)
                 outcome=batch['outcome'].to(self.device)
 
-                action_logits, win_prob=self.model(hero_seq, valid_actions)
+                action_logits, win_prob, role_logits = self.model(hero_seq, type_seq, team_seq, valid_actions)
 
                 policy_loss=self.policy_criterion(action_logits, target_actions)
                 value_loss=self.value_criterion(win_prob.squeeze(), outcome)
-                loss=policy_loss+0.5*value_loss
+                role_loss = self.role_criterion(role_logits.view(-1, 6), role_seq.view(-1))
+                
+                loss=policy_loss + 0.5*value_loss + 0.2*role_loss
 
                 total_loss+=loss.item()
+                
+                # Top-1 Accuracy
                 predictions=torch.argmax(action_logits, dim=1)
                 correct+=(predictions==target_actions).sum().item()
+                
+                # Top-5 Accuracy
+                _, top5_preds = torch.topk(action_logits, 5, dim=1)
+                correct_top5 += (top5_preds == target_actions.unsqueeze(1)).any(dim=1).sum().item()
+                
                 total+=target_actions.size(0)
         
         return {
             'val_loss':total_loss/len(self.val_loader),
-            'val_accuracy': correct/total
+            'val_accuracy': correct/total,
+            'val_top5_accuracy': correct_top5/total
         }
     
     def train(self):
@@ -138,20 +167,18 @@ class Trainer:
             #Validate
             val_metrics=self.validate()
 
-            #Update scheduler
-            self.scheduler.step()
-
             #Log
             self.logger.info(f"Train Loss: {train_loss:.4f}")
             self.logger.info(f"Val Loss: {val_metrics['val_loss']:.4f}")
             self.logger.info(f"Val Accuracy: {val_metrics['val_accuracy']:.2%}")
+            self.logger.info(f"Val Top-5 Accuracy: {val_metrics['val_top5_accuracy']:.2%}")
 
             #Save best model
             if val_metrics['val_loss']<self.best_val_loss:
                 self.best_val_loss=val_metrics['val_loss']
                 self.epochs_without_improvement=0
 
-                model_path=Path(self.config['path']['model_dir'])
+                model_path=Path(self.config['path']['model_dir'])/"best_model.pt"
                 save_checkpoint(self.model, self.optimizer, epoch, val_metrics, model_path)
                 self.logger.info(f"Best Model Saved!")
             else:

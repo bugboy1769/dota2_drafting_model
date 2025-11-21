@@ -25,7 +25,7 @@ def save_checkpoint(model, optimizer, epoch, metrics, path):
 
 def load_checkpoint(model, path, optimizer=None):
     checkpoint=torch.load(path, map_location='cpu')
-    model.load_state_dict(checkpoint['optimizer_state_dict'])
+    model.load_state_dict(checkpoint['model_state_dict'])
     if optimizer:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return checkpoint.get('metrics', {})

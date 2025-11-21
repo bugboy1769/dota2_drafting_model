@@ -1,6 +1,6 @@
 # Model Configuration
 model:
-  num_heroes: 124
+  num_heroes: 150
   embedding_dim: 128
   num_layers: 4
   num_heads: 8

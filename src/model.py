@@ -31,11 +31,20 @@ class DraftModel(nn.Module):
                  dropout:float=0.2):
         super().__init__()
 
-        #Hero embedding (125 to include padding token at index 0)
-        self.hero_embedding=nn.Embedding(125, embedding_dim, padding_idx=0)
+        #Hero embedding (num_heroes + 1 to include padding token at index 0)
+        self.hero_embedding=nn.Embedding(num_heroes + 1, embedding_dim, padding_idx=0)
+
+        #Type Embedding
+        #2 types: 0=Ban, 1=Pick
+        self.type_embedding=nn.Embedding(2, embedding_dim)
+
+        #Team Embedding
+        #2 teams: 0=Radiant, 1=Dire
+        self.team_embedding=nn.Embedding(2, embedding_dim)
 
         #Positional Encoding
-        self.pos_encoding=PositionalEncoding(embedding_dim)
+        #self.pos_encoding=PositionalEncoding(embedding_dim) we will not do this, instead we will use learnable position embeddings
+        self.pos_embedding=nn.Embedding(24, embedding_dim)
 
         #Transformer
         encoder_layer=nn.TransformerEncoderLayer(
@@ -63,6 +72,14 @@ class DraftModel(nn.Module):
             nn.Sigmoid()
         )
 
+        #Role Head (predict role for each hero in sequence)
+        #Output: 6 classes (0=Unknown/Ban, 1-5=Positions)
+        self.role_head=nn.Sequential(
+            nn.Linear(embedding_dim, 128),
+            nn.ReLU(),
+            nn.Linear(128, 6)
+        )
+
         self._init_weights()
     
     def _init_weights(self):
@@ -71,15 +88,24 @@ class DraftModel(nn.Module):
             if p.dim()>1:
                 nn.init.xavier_uniform_(p)
     
-    def forward(self, hero_sequence, valid_actions):
+    def forward(self, hero_sequence, type_sequence, team_sequence, valid_actions):
 
         #Create padding mask
         padding_mask=(hero_sequence==0)
+
         #Embed heroes
-        x=self.hero_embedding(hero_sequence) #[batch, seq_len, embed_dim]
+        hero_emb=self.hero_embedding(hero_sequence) #[batch, seq_len, embed_dim]
+        type_emb=self.type_embedding(type_sequence)
+        team_emb=self.team_embedding(team_sequence)
+
+        #Combine Embeddings
+        x=hero_emb+type_emb+team_emb
+
         #Add positional encoding
-        x=self.pos_encoding(x)
-        #Transform
+        positions=torch.arange(0, 24, device=x.device).unsqueeze(0)
+        x=x+self.pos_embedding(positions)
+
+        #Pass to transformer
         x=self.transformer(x, src_key_padding_mask=padding_mask)
 
         #Extract draft representation
@@ -90,9 +116,10 @@ class DraftModel(nn.Module):
         #Generate predictions
         action_logits=self.policy_head(draft_repr)
         win_prob=self.value_head(draft_repr)
+        role_logits=self.role_head(x) # [batch, seq_len, 6]
 
         #Mask invalid actions
-        action_logits=action_logits.masked_fill(~valid_actions, float('-inf'))
+        action_logits=action_logits.masked_fill_(~valid_actions, float('-inf'))
 
-        return action_logits, win_prob
+        return action_logits, win_prob, role_logits
 

@@ -14,25 +14,47 @@ class OpenDotaAPI:
         self.rate_limit_delay=rate_limit_delay
         self.logger=logging.getLogger(__name__)
 
+    def _make_request(self, url: str, params: Optional[Dict] = None) -> Optional[requests.Response]:
+        max_retries = 5
+        base_delay = 2.0
+        
+        for attempt in range(max_retries):
+            try:
+                time.sleep(self.rate_limit_delay)
+                response = requests.get(url, params=params)
+                if response.status_code == 429: # Rate limit hit
+                    delay = base_delay * (2 ** attempt)
+                    self.logger.warning(f"Rate limit hit. Retrying in {delay}s...")
+                    time.sleep(delay)
+                    continue
+                return response
+            except (requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
+                delay = base_delay * (2 ** attempt)
+                self.logger.warning(f"Connection error: {e}. Retrying in {delay}s...")
+                time.sleep(delay)
+        return None
+
     def get_pro_matches(self, less_than_match_id: Optional[int]=None)->List[Dict]:
         url = f"{self.BASE_URL}/proMatches"
-        params={'less_than_match_id':less_than_match_id} if less_than_match_id else 0
-        time.sleep(self.rate_limit_delay)
-        response=requests.get(url, params=params)
-        return response.json()
+        params={'less_than_match_id':less_than_match_id} if less_than_match_id else None
+        response = self._make_request(url, params=params)
+        if response and response.status_code == 200:
+            return response.json()
+        return []
     
     def get_match(self, match_id: int)->Dict:
         url=f"{self.BASE_URL}/matches/{match_id}"
-        time.sleep(self.rate_limit_delay)
-        response=requests.get(url)
-        if response.status_code==200:
+        response = self._make_request(url)
+        if response and response.status_code==200:
             return response.json()
         return None
 
     def get_heroes(self)->Dict:
         url=f"{self.BASE_URL}/heroes"
-        response=requests.get(url)
-        return response.json()
+        response = self._make_request(url)
+        if response and response.status_code == 200:
+            return response.json()
+        return []
 
 class DataCollector:
     
@@ -130,35 +152,126 @@ class DataCollector:
         valid_hero_ids = set()
         for action in picks_bans:
             hero_id = action['hero_id']
-            if 1 <= hero_id <= 124:  # Only accept valid heroes
+            if 1 <= hero_id <= 150:  # Only accept valid heroes
                 valid_hero_ids.add(hero_id)
         
         # If too few valid heroes, skip this match
-        if len([a for a in picks_bans if 1 <= a['hero_id'] <= 124]) < 20:
+        if len([a for a in picks_bans if 1 <= a['hero_id'] <= 150]) < 20:
             return []
         
         radiant_win = match_data.get('radiant_win', False)
         examples = []
         
+        # Create hero_id -> role mapping
+        # Roles: 0:Unknown, 1:Pos1, 2:Pos2, 3:Pos3, 4:Pos4, 5:Pos5
+        # Create hero_id -> role and hero_id -> gold_at_10 mapping
+        hero_role_map = {}
+        hero_gold_map = {}
+        
+        players = match_data.get('players', [])
+        for p in players:
+            h_id = p.get('hero_id')
+            lane = p.get('lane')
+            role = p.get('lane_role')
+            
+            # Get Gold at 10 min
+            gold_t = p.get('gold_t')
+            gold_10 = 0
+            if gold_t and len(gold_t) > 10:
+                gold_10 = gold_t[10]
+            else:
+                # Fallback: estimate based on GPM
+                gold_10 = p.get('gold_per_min', 300) * 10
+            
+            if h_id:
+                hero_gold_map[h_id] = gold_10
+
+            # Heuristic mapping to standard 1-5 positions
+            pos = 0
+            if lane == 2: # Mid
+                pos = 2
+            elif lane == 1: # Safe
+                if role == 1: pos = 1 # Safe Core
+                else: pos = 5 # Safe Supp
+            elif lane == 3: # Off
+                if role == 1: pos = 3 # Off Core
+                else: pos = 4 # Off Supp
+            
+            if h_id:
+                hero_role_map[h_id] = pos
+        
+        # Calculate Lane Outcomes (Radiant Perspective)
+        # We need to identify which hero is on which team and position
+        # But hero_role_map doesn't store team. We need to cross-reference with picks_bans.
+        
+        rad_pos = {} # pos -> gold
+        dire_pos = {} # pos -> gold
+        
+        # Fill the pos maps
+        for action in picks_bans:
+            if action['is_pick']:
+                h_id = action['hero_id']
+                team = action['team'] # 0=Radiant, 1=Dire
+                pos = hero_role_map.get(h_id, 0)
+                gold = hero_gold_map.get(h_id, 0)
+                
+                if pos > 0:
+                    if team == 0:
+                        rad_pos[pos] = gold
+                    else:
+                        dire_pos[pos] = gold
+        
+        # Calculate Diffs (Normalize by 1000)
+        # Safe Lane: Rad Safe (1+5) vs Dire Off (3+4)
+        safe_diff = ((rad_pos.get(1, 0) + rad_pos.get(5, 0)) - (dire_pos.get(3, 0) + dire_pos.get(4, 0))) / 1000.0
+        
+        # Mid Lane: Rad Mid (2) vs Dire Mid (2)
+        mid_diff = (rad_pos.get(2, 0) - dire_pos.get(2, 0)) / 1000.0
+        
+        # Off Lane: Rad Off (3+4) vs Dire Safe (1+5)
+        off_diff = ((rad_pos.get(3, 0) + rad_pos.get(4, 0)) - (dire_pos.get(1, 0) + dire_pos.get(5, 0))) / 1000.0
+        
+        lane_outcome = [safe_diff, mid_diff, off_diff]
+
         for step in range(len(picks_bans)):
             current_action = picks_bans[step]
             hero_id = current_action['hero_id']
             
             # CRITICAL: Skip if hero_id is invalid
-            if hero_id < 1 or hero_id > 124:
+            if hero_id < 1 or hero_id > 150:
                 continue
             
             # Build history (only valid heroes)
-            history = [a for a in picks_bans[:step] if 1 <= a['hero_id'] <= 124]
+            history = [a for a in picks_bans[:step] if 1 <= a['hero_id'] <= 150]
             
             # Build hero sequence (pad to 24)
             hero_sequence = [0] * 24
             for i, action in enumerate(history[:24]):  # Cap at 24
                 hero_sequence[i] = action['hero_id']
             
+            #Build type sequence
+            type_sequence=[0]*24
+            for i, action in enumerate(history[:24]):
+                type_sequence[i]=int(action['is_pick'])
+            
+            #Build team sequence
+            team_sequence=[0]*24
+            for i, action in enumerate(history[:24]):
+                team_sequence[i]=action['team']
+
+            #Build role sequence (New Feature)
+            role_sequence=[0]*24
+            for i, action in enumerate(history[:24]):
+                if action['is_pick']:
+                    # If it's a pick, use the mapped role
+                    role_sequence[i] = hero_role_map.get(action['hero_id'], 0)
+                else:
+                    # If it's a ban, role is 0 (unknown/irrelevant)
+                    role_sequence[i] = 0
+            
             # Track available heroes
             picked_banned = set(action['hero_id'] for action in history)
-            valid_actions = [hero_id not in picked_banned for hero_id in range(1, 125)]
+            valid_actions = [hero_id not in picked_banned for hero_id in range(1, 151)]
             
             # Determine outcome based on team
             team = current_action['team']
@@ -166,6 +279,10 @@ class DataCollector:
             
             examples.append({
                 'hero_sequence': hero_sequence,
+                'type_sequence': type_sequence,
+                'team_sequence': team_sequence,
+                'role_sequence': role_sequence,
+                'lane_outcome': lane_outcome,
                 'valid_actions': valid_actions,
                 'target_actions': hero_id - 1,  # Now guaranteed to be 0-123
                 'outcome': outcome,
