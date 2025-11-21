@@ -30,6 +30,7 @@ class Trainer:
         self.policy_criterion=nn.CrossEntropyLoss()
         self.value_criterion=nn.BCELoss()
         self.role_criterion=nn.CrossEntropyLoss(ignore_index=0) # Ignore padding/bans
+        self.synergy_criterion=nn.MSELoss()
 
         #Optimizer
         self.optimizer=torch.optim.AdamW(
@@ -81,10 +82,11 @@ class Trainer:
             role_seq=batch['role_sequence'].to(self.device) # New
             valid_actions=batch['valid_actions'].to(self.device)
             target_action=batch['target_actions'].to(self.device)
+            lane_outcome=batch['lane_outcome'].to(self.device)
             outcome=batch['outcome'].to(self.device)
 
             #Forward pass
-            action_logits, win_prob, role_logits = self.model(hero_seq, type_seq, team_seq, valid_actions)
+            action_logits, win_prob, role_logits, synergy_preds = self.model(hero_seq, type_seq, team_seq, valid_actions)
 
             #Compute losses
             policy_loss=self.policy_criterion(action_logits, target_action)
@@ -92,9 +94,12 @@ class Trainer:
             
             # Role Loss: Flatten [Batch, Seq] -> [Batch*Seq]
             role_loss = self.role_criterion(role_logits.view(-1, 6), role_seq.view(-1))
+
+            #Synergy Loss
+            synergy_loss=self.synergy_criterion(synergy_preds, lane_outcome)
             
             # Total Loss (Weighted)
-            loss=policy_loss + 0.5*value_loss + 0.2*role_loss
+            loss=policy_loss + 0.5*value_loss + 0.2*role_loss + 0.5*synergy_loss
 
             #Backward pass
             self.optimizer.zero_grad()
@@ -125,15 +130,16 @@ class Trainer:
                 role_seq=batch['role_sequence'].to(self.device) # New
                 valid_actions=batch['valid_actions'].to(self.device)
                 target_actions=batch['target_actions'].to(self.device)
+                lane_outcome=batch['lane_outcome'].to(self.device)
                 outcome=batch['outcome'].to(self.device)
 
-                action_logits, win_prob, role_logits = self.model(hero_seq, type_seq, team_seq, valid_actions)
+                action_logits, win_prob, role_logits, synergy_preds = self.model(hero_seq, type_seq, team_seq, valid_actions)
 
                 policy_loss=self.policy_criterion(action_logits, target_actions)
                 value_loss=self.value_criterion(win_prob.squeeze(), outcome)
                 role_loss = self.role_criterion(role_logits.view(-1, 6), role_seq.view(-1))
-                
-                loss=policy_loss + 0.5*value_loss + 0.2*role_loss
+                synergy_loss=self.synergy_criterion(synergy_preds, lane_outcome)
+                loss=policy_loss + 0.5*value_loss + 0.2*role_loss + 0.5*synergy_loss
 
                 total_loss+=loss.item()
                 

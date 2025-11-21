@@ -80,6 +80,14 @@ class DraftModel(nn.Module):
             nn.Linear(128, 6)
         )
 
+        #Synergy Head
+        #Catch roles, create lane pairs and mid pair. Calculate the gold difference
+        self.synergy_head=nn.Sequential(
+            nn.Linear(embedding_dim, 128),
+            nn.ReLU(),
+            nn.Linear(128, 3) #Safe Diff, Mid Diff, Off Diff
+        ) 
+
         self._init_weights()
     
     def _init_weights(self):
@@ -117,9 +125,10 @@ class DraftModel(nn.Module):
         action_logits=self.policy_head(draft_repr)
         win_prob=self.value_head(draft_repr)
         role_logits=self.role_head(x) # [batch, seq_len, 6]
+        synergy_preds=self.synergy_head(draft_repr)
 
         #Mask invalid actions
         action_logits=action_logits.masked_fill_(~valid_actions, float('-inf'))
 
-        return action_logits, win_prob, role_logits
+        return action_logits, win_prob, role_logits, synergy_preds
 

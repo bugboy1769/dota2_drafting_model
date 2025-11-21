@@ -65,8 +65,8 @@ class DraftSession:
     def get_suggestion(self):
         """Get best next move"""
         #Stop condition
-        if len(self.history)>=24:
-            return None, 0.0
+        if len(self.history)>=22: # Fixed to 22 (length of DRAFT_ORDER)
+            return None, 0.0, [0,0,0]
         
         #A. Prepare Input
         seq_len=24
@@ -90,9 +90,11 @@ class DraftSession:
         team_sequence=[0]*24
         
         for i in range(min(len(self.history), 24)):
-            is_pick, team = DRAFT_ORDER[i]
-            type_sequence[i] = is_pick
-            team_sequence[i] = team
+            # Handle case where history is longer than DRAFT_ORDER (shouldn't happen with fixed stop)
+            if i < len(DRAFT_ORDER):
+                is_pick, team = DRAFT_ORDER[i]
+                type_sequence[i] = is_pick
+                team_sequence[i] = team
         
         #Create the mask. True:Available, False:NA
         valid_actions=[True]*150
@@ -110,7 +112,7 @@ class DraftSession:
         with torch.no_grad():
             #action_logits -> raw scores for next pick
             #win_prob -> value heads prediction for winning with predicted state
-            action_logits, win_prob, role_logit=self.model(seq_tensor, type_tensor, team_tensor, valid_tensor)
+            action_logits, win_prob, role_logits, synergy_preds = self.model(seq_tensor, type_tensor, team_tensor, valid_tensor)
         
         #D. Process Output
         #Apply softmax for percentages
@@ -124,7 +126,7 @@ class DraftSession:
             name=self.id_to_name.get(h_id, "Unknown")
             suggestions.append((name, p.item()))
         
-        return suggestions, win_prob.item()
+        return suggestions, win_prob.item(), synergy_preds[0].tolist()
     
 #INTERACTIVE LOOP
 
@@ -145,8 +147,9 @@ def main():
         if user_input.lower()=='quit':
             break
         elif user_input.lower()=='suggest':
-            suggestions, win_rate=session.get_suggestion()
+            suggestions, win_rate, synergy=session.get_suggestion()
             print(f"\nEstimated Win Probability: {win_rate:.1%}")
+            print(f"Predicted Lane Advantage (Radiant): Safe={synergy[0]:+.2f}, Mid={synergy[1]:+.2f}, Off={synergy[2]:+.2f}")
             print("Recommended Picks:")
             for name, conf in suggestions:
                 print(f"    - {name}: {conf:.1%}")
@@ -156,8 +159,9 @@ def main():
             if success:
                 print(f"Added -> {session.id_to_name[session.history[-1]]}")
                 #Auto suggest after pick
-                suggestions, win_rate=session.get_suggestion()
-                print(f"    (Win Probability: {win_rate:.1%})")
+                if len(session.history) < 22:
+                    suggestions, win_rate, synergy=session.get_suggestion()
+                    print(f"    (Win Probability: {win_rate:.1%})")
 
 if __name__=='__main__':
     main()

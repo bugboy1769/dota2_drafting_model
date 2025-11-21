@@ -164,28 +164,27 @@ class DataCollector:
         
         # Create hero_id -> role mapping
         # Roles: 0:Unknown, 1:Pos1, 2:Pos2, 3:Pos3, 4:Pos4, 5:Pos5
-        # Create hero_id -> role and hero_id -> gold_at_10 mapping
         hero_role_map = {}
-        hero_gold_map = {}
-        
+        hero_gold_map={}
+
         players = match_data.get('players', [])
         for p in players:
             h_id = p.get('hero_id')
-            lane = p.get('lane')
-            role = p.get('lane_role')
-            
-            # Get Gold at 10 min
-            gold_t = p.get('gold_t')
-            gold_10 = 0
-            if gold_t and len(gold_t) > 10:
-                gold_10 = gold_t[10]
+            lane = p.get('lane') # 1:Safe, 2:Mid, 3:Off
+            role = p.get('lane_role') # 1:Core, 2:Supp, 3:Roam
+
+            #Get gold at 10 min
+            gold_t=p.get('gold_t')
+            gold_10=0
+            if gold_t and len(gold_t)>10:
+                gold_10=gold_t[10]
             else:
-                # Fallback: estimate based on GPM
-                gold_10 = p.get('gold_per_min', 300) * 10
+                #Fallback: Estimate based on GPM
+                gold_10=p.get('gold_per_min', 300)
             
             if h_id:
-                hero_gold_map[h_id] = gold_10
-
+                hero_gold_map[h_id]=gold_10
+     
             # Heuristic mapping to standard 1-5 positions
             pos = 0
             if lane == 2: # Mid
@@ -200,38 +199,36 @@ class DataCollector:
             if h_id:
                 hero_role_map[h_id] = pos
         
-        # Calculate Lane Outcomes (Radiant Perspective)
-        # We need to identify which hero is on which team and position
-        # But hero_role_map doesn't store team. We need to cross-reference with picks_bans.
-        
-        rad_pos = {} # pos -> gold
-        dire_pos = {} # pos -> gold
-        
-        # Fill the pos maps
+        #Calculate lane outcomes (radiant perspective)
+        rad_pos={}
+        dire_pos={}
+
+        #Fill the pos maps based on picks
         for action in picks_bans:
             if action['is_pick']:
-                h_id = action['hero_id']
-                team = action['team'] # 0=Radiant, 1=Dire
-                pos = hero_role_map.get(h_id, 0)
-                gold = hero_gold_map.get(h_id, 0)
-                
-                if pos > 0:
-                    if team == 0:
-                        rad_pos[pos] = gold
+                h_id=action['hero_id']
+                team=action['team'] #0=radiant, 1=dire
+                pos=hero_role_map.get(h_id, 0)
+                gold=hero_gold_map.get(h_id, 0)
+
+                if pos>0:
+                    if team==0:
+                        rad_pos[pos]=gold
                     else:
-                        dire_pos[pos] = gold
-        
-        # Calculate Diffs (Normalize by 1000)
-        # Safe Lane: Rad Safe (1+5) vs Dire Off (3+4)
-        safe_diff = ((rad_pos.get(1, 0) + rad_pos.get(5, 0)) - (dire_pos.get(3, 0) + dire_pos.get(4, 0))) / 1000.0
-        
-        # Mid Lane: Rad Mid (2) vs Dire Mid (2)
-        mid_diff = (rad_pos.get(2, 0) - dire_pos.get(2, 0)) / 1000.0
-        
-        # Off Lane: Rad Off (3+4) vs Dire Safe (1+5)
-        off_diff = ((rad_pos.get(3, 0) + rad_pos.get(4, 0)) - (dire_pos.get(1, 0) + dire_pos.get(5, 0))) / 1000.0
-        
-        lane_outcome = [safe_diff, mid_diff, off_diff]
+                        dire_pos[pos]=gold
+
+        #Calcualte diffs (Normalize by 1000)
+        #Safe Lane: Rad Safe (1+5) vs Dire Off (3+4)
+        safe_diff=((rad_pos.get(1,0)+rad_pos.get(5,0))-(dire_pos.get(3,0)+dire_pos.get(4,0)))/1000.0
+
+        #Mid Lane
+        mid_diff=(rad_pos.get(2,0)-dire_pos.get(2,0))/1000.0
+
+        #Off Lane
+        off_diff=((rad_pos.get(3,0)+rad_pos.get(4,0))-(dire_pos.get(1,0)+dire_pos.get(5,0)))/1000.0
+
+        lane_outcome=[safe_diff, mid_diff, off_diff]
+
 
         for step in range(len(picks_bans)):
             current_action = picks_bans[step]
@@ -282,10 +279,10 @@ class DataCollector:
                 'type_sequence': type_sequence,
                 'team_sequence': team_sequence,
                 'role_sequence': role_sequence,
-                'lane_outcome': lane_outcome,
                 'valid_actions': valid_actions,
                 'target_actions': hero_id - 1,  # Now guaranteed to be 0-123
                 'outcome': outcome,
+                'lane_outcome':lane_outcome,
                 'team': team,
                 'is_pick': int(current_action['is_pick'])
             })
