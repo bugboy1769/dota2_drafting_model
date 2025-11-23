@@ -38,6 +38,10 @@ While the World Model captures the static rules and correlations of the game, **
 
 *Note: Accuracy is limited by the "Aleatoric Uncertainty" of drafting—there are often many valid picks in any given situation.*
 
+## Training Curves
+
+![alt text](training_curves.png)
+
 ## Features
 
 ### Interactive Draft Assistant (`play.py`)

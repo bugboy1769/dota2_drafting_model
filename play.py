@@ -4,7 +4,7 @@ import json
 import numpy as np
 from pathlib import Path
 from src.model import DraftModel
-from src.utils import load_checkpoint
+from src.utils import load_checkpoint, prepare_model_input
 
 class DraftSession:
     def __init__(self, config_path, model_path):
@@ -68,45 +68,8 @@ class DraftSession:
         if len(self.history)>=26: # Fixed to 22 (length of DRAFT_ORDER)
             return None, 0.0, [0,0,0]
         
-        #A. Prepare Input
-        seq_len=24
-        sequence=[0]*seq_len
-        for i, h_id in enumerate(self.history):
-            sequence[i]=h_id
-        
-        # Standard Captain's Mode Draft Order (Team 0=Radiant, Team 1=Dire)
-        # (is_pick, team)
-        DRAFT_ORDER = [
-            (0, 0), (0, 1), (0, 0), (0, 1), # First Ban Phase (4 bans)
-            (1, 0), (1, 1), (1, 1), (1, 0), # First Pick Phase (4 picks)
-            (0, 0), (0, 1), (0, 0), (0, 1), # Second Ban Phase (4 bans)
-            (1, 1), (1, 0), (1, 1), (1, 0), # Second Pick Phase (4 picks)
-            (0, 0), (0, 1), (0, 0), (0, 1), # Third Ban Phase (4 bans)
-            (1, 0), (1, 1)                  # Third Pick Phase (2 picks)
-        ]
-
-        #Build type and team sequences based on fixed order
-        type_sequence=[0]*24
-        team_sequence=[0]*24
-        
-        for i in range(min(len(self.history), 24)):
-            # Handle case where history is longer than DRAFT_ORDER (shouldn't happen with fixed stop)
-            if i < len(DRAFT_ORDER):
-                is_pick, team = DRAFT_ORDER[i]
-                type_sequence[i] = is_pick
-                team_sequence[i] = team
-        
-        #Create the mask. True:Available, False:NA
-        valid_actions=[True]*150
-        for h_id in self.history:
-            if 1<=h_id<=150:
-                valid_actions[h_id-1]=False
-        
-        #B. Convert to tensor and batch
-        seq_tensor=torch.tensor([sequence], dtype=torch.long).to(self.device)
-        type_tensor=torch.tensor([type_sequence], dtype=torch.long).to(self.device)
-        team_tensor=torch.tensor([team_sequence], dtype=torch.long).to(self.device)
-        valid_tensor=torch.tensor([valid_actions], dtype=torch.bool).to(self.device)
+        #A. Prepare Input using Helper
+        seq_tensor, type_tensor, team_tensor, valid_tensor = prepare_model_input(self.history, self.device)
 
         #C. Forward Pass
         with torch.no_grad():

@@ -16,26 +16,47 @@ def parse_logs(log_path):
     # Pattern: Epoch X/Y ... Train Loss: A ... Val Loss: B ... Val Accuracy: C ... Val Top-5 Accuracy: D
     
     # We'll iterate line by line to be robust
-    current_epoch = 0
+    current_run = {'epochs': [], 'train_loss': [], 'val_loss': [], 'val_acc': [], 'val_top5': []}
+    all_runs = []
+    
+    last_epoch = -1
+    
     for line in content.split('\n'):
         if "Epoch" in line and "/" in line:
             try:
-                current_epoch = int(line.split("Epoch")[1].split("/")[0].strip())
-                if current_epoch not in epochs:
-                    epochs.append(current_epoch)
+                ep = int(line.split("Epoch")[1].split("/")[0].strip())
+                
+                # Detect new run (epoch reset)
+                if ep < last_epoch:
+                    if len(current_run['epochs']) > 0:
+                        all_runs.append(current_run)
+                    current_run = {'epochs': [], 'train_loss': [], 'val_loss': [], 'val_acc': [], 'val_top5': []}
+                
+                if ep not in current_run['epochs']:
+                    current_run['epochs'].append(ep)
+                    last_epoch = ep
             except:
                 pass
                 
         if "Train Loss:" in line:
-            train_losses.append(float(line.split("Train Loss:")[1].strip()))
+            current_run['train_loss'].append(float(line.split("Train Loss:")[1].strip()))
         if "Val Loss:" in line:
-            val_losses.append(float(line.split("Val Loss:")[1].strip()))
+            current_run['val_loss'].append(float(line.split("Val Loss:")[1].strip()))
         if "Val Accuracy:" in line:
-            val_accuracies.append(float(line.split("Val Accuracy:")[1].strip().replace('%', '')))
+            current_run['val_acc'].append(float(line.split("Val Accuracy:")[1].strip().replace('%', '')))
         if "Val Top-5 Accuracy:" in line:
-            val_top5_accuracies.append(float(line.split("Val Top-5 Accuracy:")[1].strip().replace('%', '')))
+            current_run['val_top5'].append(float(line.split("Val Top-5 Accuracy:")[1].strip().replace('%', '')))
 
-    return epochs, train_losses, val_losses, val_accuracies, val_top5_accuracies
+    # Add the final run
+    if len(current_run['epochs']) > 0:
+        all_runs.append(current_run)
+        
+    # Select the last run (most recent)
+    if not all_runs:
+        return [], [], [], [], []
+        
+    latest = all_runs[-1]
+    return latest['epochs'], latest['train_loss'], latest['val_loss'], latest['val_acc'], latest['val_top5']
 
 def plot_metrics(epochs, train_losses, val_losses, val_accuracies, val_top5_accuracies):
     plt.figure(figsize=(12, 10))
