@@ -65,7 +65,7 @@ class DraftSession:
     def get_suggestion(self):
         """Get best next move"""
         #Stop condition
-        if len(self.history)>=22: # Fixed to 22 (length of DRAFT_ORDER)
+        if len(self.history)>=26: # Fixed to 22 (length of DRAFT_ORDER)
             return None, 0.0, [0,0,0]
         
         #A. Prepare Input

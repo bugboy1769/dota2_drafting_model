@@ -1,122 +1,68 @@
-# Dota 2 Draft Model
+# Dota 2 Drafting Model (AlphaZero Style)
 
-ML model that predicts optimal hero picks/bans in Dota 2 drafts using Transformer architecture trained on professional matches.
+A deep learning model designed to draft Dota 2 lineups, predicting picks, bans, roles, and lane outcomes. It uses a Transformer-based architecture and is evolving towards an AlphaZero-style MCTS inference engine.
 
-## Quick Start
+## 🧠 Model Architecture
 
+The model is a **Multi-Task Transformer** that learns to understand the draft state and predict multiple objectives simultaneously:
+
+1.  **Draft Representation:** A Transformer Encoder processes the sequence of picks and bans (with Positional, Team, and Type embeddings).
+2.  **Policy Head:** Predicts the next hero to pick or ban (Imitation Learning).
+3.  **Value Head:** Predicts the win probability of the current draft state.
+4.  **Role Head:** Predicts the role (1-5) of each hero in the draft.
+5.  **Synergy Head:** Predicts the **Gold Difference** at 10 minutes for Safe, Mid, and Off lanes.
+    *   *Innovation:* This head receives both the draft context AND the predicted roles to calculate precise lane matchups.
+
+## 📊 Performance
+
+*   **Top-5 Accuracy:** ~40% (Predicting human pro picks).
+*   **Top-1 Accuracy:** ~16%.
+*   **Loss:** Converged to ~4.5 (Multi-task weighted loss).
+
+*Note: Accuracy is limited by the "Aleatoric Uncertainty" of drafting—there are often many valid picks in any given situation.*
+
+## 🚀 Features
+
+### 1. Interactive Draft Assistant (`play.py`)
+Draft against the AI or use it as a companion tool.
+*   Suggests top 5 picks.
+*   Predicts Win Probability.
+*   **Predicts Lane Outcomes:** "Safe Lane: +200 Gold", "Mid Lane: -500 Gold".
+
+### 2. Training Visualization
+Generate training curves from your logs:
 ```bash
-# Setup
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# Collect data (takes 4-6 hours)
-python scripts/01_collect_data.py --num-matches 5000
-
-# Process data
-python scripts/02_process_data.py
-
-# Train model
-python scripts/03_train.py
-
-# Evaluate
-python scripts/04_evaluate.py
-
-# Demo predictions
-python scripts/05_demo_prediction.py
+python scripts/plot_training.py
 ```
 
-## Project Structure
+### 3. (Upcoming) MCTS Inference
+We are implementing **Monte Carlo Tree Search (MCTS)** to move beyond simple imitation.
+*   Instead of just predicting what a human *would* pick, MCTS simulates future counter-picks to find what you *should* pick.
+*   It uses the **Value Head** to evaluate leaf nodes and the **Policy Head** to guide the search.
 
-```
-dota2-draft-model/
-├── src/                    # Source code
-│   ├── data.py            # Data collection from OpenDota API
-│   ├── dataset.py         # PyTorch Dataset
-│   ├── model.py           # Transformer model
-│   ├── train.py           # Training loop
-│   ├── evaluate.py        # Evaluation
-│   ├── predict.py         # Inference
-│   └── utils.py           # Helpers
-├── scripts/               # Executable scripts
-├── data/                  # Data (gitignored)
-├── models/                # Saved models (gitignored)
-└── config.yaml           # Configuration
-```
+## 🛠️ Setup & Usage
 
-## Configuration
+1.  **Install Dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-Edit `config.yaml` to adjust hyperparameters:
+2.  **Collect Data:**
+    ```bash
+    python scripts/01_collect_data.py
+    ```
 
-```yaml
-model:
-  embedding_dim: 128        # Hero embedding size
-  num_layers: 4             # Transformer layers
-  num_heads: 8              # Attention heads
+3.  **Process Data:**
+    ```bash
+    python scripts/02_process_data.py
+    ```
 
-training:
-  batch_size: 32
-  learning_rate: 0.0001
-  num_epochs: 50
-```
+4.  **Train:**
+    ```bash
+    python scripts/03_train.py
+    ```
 
-## Usage
-
-### CLI Prediction
-
-```python
-from src.predict import DraftPredictor
-
-predictor = DraftPredictor('config.yaml', 'models/best_model.pt')
-
-draft = [
-    {'hero_id': 1, 'is_pick': False, 'team': 0},  # Ban
-    {'hero_id': 8, 'is_pick': True, 'team': 0},   # Pick
-]
-
-result = predictor.predict(draft, top_k=5)
-print(f"Win Prob: {result['win_probability']:.1%}")
-for s in result['suggestions']:
-    print(f"  {s['hero_name']}: {s['confidence']:.1%}")
-```
-
-## Expected Performance
-
-- **Training Time**: 2-4 hours (GPU) / 8-12 hours (CPU)
-- **Accuracy**: 25-35% (5,000 matches), 35-45% (10,000+ matches)
-- **Baseline**: 0.8% (random guess among 124 heroes)
-
-## Requirements
-
-- Python 3.8+
-- PyTorch 2.0+
-- 4GB+ RAM
-- GPU recommended (optional)
-
-## Model Architecture
-
-```
-Input → Hero Embeddings → Positional Encoding → 
-Transformer (4 layers, 8 heads) → 
-  ├─ Policy Head → Hero prediction
-  └─ Value Head → Win probability
-```
-
-Total parameters: ~900K
-
-## Troubleshooting
-
-**CUDA out of memory**: Reduce `batch_size` to 16 or 8
-
-**Training too slow**: Use Google Colab or reduce model size:
-```yaml
-model:
-  embedding_dim: 64
-  num_layers: 2
-```
-
-**Hero ID out of bounds**: Delete `data/processed/*.pkl` and re-run `02_process_data.py`
-
-## License
-
-MIT
+5.  **Play/Test:**
+    ```bash
+    python play.py
+    ```
