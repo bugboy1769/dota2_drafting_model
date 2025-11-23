@@ -1,17 +1,34 @@
 # Dota 2 Drafting Model (AlphaZero Style)
 
-A deep learning model designed to draft Dota 2 lineups, predicting picks, bans, roles, and lane outcomes. It uses a Transformer-based architecture and is evolving towards an AlphaZero-style MCTS inference engine.
+A deep learning system that learns the "Energy Landscape" of Dota 2 drafting. It moves beyond simple imitation learning by building a comprehensive World Model of the game's drafting phase, capable of understanding roles, lane dynamics, and win conditions.
 
-## 🧠 Model Architecture
+## 📡 Data Source
 
-The model is a **Multi-Task Transformer** that learns to understand the draft state and predict multiple objectives simultaneously:
+The model is trained on high-level professional matches fetched from the **OpenDota API**.
+*   **Input:** Captain's Mode draft sequences (Picks & Bans).
+*   **Rich Features:**
+    *   Hero IDs and Draft Order.
+    *   Player Roles (1-5) derived from in-game lane presence and farm.
+    *   Lane Outcomes (Gold Difference at 10 minutes).
+    *   Match Winner.
 
-1.  **Draft Representation:** A Transformer Encoder processes the sequence of picks and bans (with Positional, Team, and Type embeddings).
-2.  **Policy Head:** Predicts the next hero to pick or ban (Imitation Learning).
-3.  **Value Head:** Predicts the win probability of the current draft state.
-4.  **Role Head:** Predicts the role (1-5) of each hero in the draft.
-5.  **Synergy Head:** Predicts the **Gold Difference** at 10 minutes for Safe, Mid, and Off lanes.
-    *   *Innovation:* This head receives both the draft context AND the predicted roles to calculate precise lane matchups.
+## 🧠 The World Model
+
+The core of the system is a **Multi-Task Transformer** that maps the complex interactions of heroes into a high-dimensional vector space. It doesn't just memorize picks; it learns the underlying mechanics of the draft:
+
+1.  **Policy Head (The Prior):** Predicts the most likely next move based on professional trends.
+2.  **Value Head (The Evaluator):** Estimates the win probability of any given draft state.
+3.  **Role Head (The Context):** Explicitly predicts which hero is playing which role (Carry, Mid, Offlane, Support), giving the model a structural understanding of the lineup.
+4.  **Synergy Head (The Mechanics):** Predicts the **Gold Difference** at 10 minutes for each lane.
+    *   *Architecture:* Fuses the Draft Representation with the Predicted Roles to calculate precise, role-aware lane matchups.
+
+## 🧭 MCTS: Charting the Probability Space
+
+While the World Model captures the static rules and correlations of the game, **Monte Carlo Tree Search (MCTS)** captures the dynamic consequences.
+
+*   **Adversarial Search:** Instead of assuming a cooperative environment, MCTS simulates the opponent's best responses (Minimax).
+*   **Probability Charting:** It explores the branching future of the draft, using the Policy Head to guide exploration and the Value Head to evaluate leaf nodes.
+*   **Result:** It finds the "Path of Least Resistance" to victory, effectively solving for the Nash Equilibrium of the draft rather than just copying human biases.
 
 ## 📊 Performance
 
@@ -23,22 +40,11 @@ The model is a **Multi-Task Transformer** that learns to understand the draft st
 
 ## 🚀 Features
 
-### 1. Interactive Draft Assistant (`play.py`)
-Draft against the AI or use it as a companion tool.
-*   Suggests top 5 picks.
-*   Predicts Win Probability.
-*   **Predicts Lane Outcomes:** "Safe Lane: +200 Gold", "Mid Lane: -500 Gold".
-
-### 2. Training Visualization
-Generate training curves from your logs:
-```bash
-python scripts/plot_training.py
-```
-
-### 3. (Upcoming) MCTS Inference
-We are implementing **Monte Carlo Tree Search (MCTS)** to move beyond simple imitation.
-*   Instead of just predicting what a human *would* pick, MCTS simulates future counter-picks to find what you *should* pick.
-*   It uses the **Value Head** to evaluate leaf nodes and the **Policy Head** to guide the search.
+### Interactive Draft Assistant (`play.py`)
+A CLI tool to draft against the AI or use it as a companion.
+*   **Real-time Suggestions:** Top 5 recommended picks/bans.
+*   **Win Rate Estimation:** Live update of your winning chances.
+*   **Lane Forecasting:** Predicts specific gold advantages/disadvantages for Safe, Mid, and Off lanes based on the current lineup.
 
 ## 🛠️ Setup & Usage
 
