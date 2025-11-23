@@ -22,7 +22,7 @@ The core of the system is a **Multi-Task Transformer** that maps the complex int
 4.  **Synergy Head (The Mechanics):** Predicts the **Gold Difference** at 10 minutes for each lane.
     *   *Architecture:* Fuses the Draft Representation with the Predicted Roles to calculate precise, role-aware lane matchups.
 
-## MCTS: Charting the Probability Space (Under Construction)
+## MCTS: Charting the Probability Space (Implemented)
 
 While the World Model captures the static rules and correlations of the game, **Monte Carlo Tree Search (MCTS)** captures the dynamic consequences (The path integral within the Hamiltonian that optimizes for winning).
 

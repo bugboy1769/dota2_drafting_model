@@ -1,19 +1,20 @@
+from src.utils import prepare_model_input, get_draft_order
 from src.mcts import MCTS
 import torch
-from src.utils import prepare_model_input, DRAFT_ORDER
 
 class DotaMCTS(MCTS):
-    def __init__(self, model, device='cpu', c_puct=1.0):
+    def __init__(self, model, device='cpu', c_puct=1.0, first_pick_team=0):
         super().__init__(model, c_puct)
         self.device=device
         self.model=model.to(device)
-        self.c_puct=c_puct
+        self.first_pick_team = first_pick_team
+        self.draft_order = get_draft_order(first_pick_team)
     
     def _evaluate_state(self, state):
         self.state=state
 
         #Prepare model input
-        seq_tensor, type_tensor, team_tensor, valid_tensor=prepare_model_input(state, self.device)
+        seq_tensor, type_tensor, team_tensor, valid_tensor=prepare_model_input(state, self.device, self.first_pick_team)
         
         #Run the model
         with torch.no_grad():
@@ -51,8 +52,8 @@ class DotaMCTS(MCTS):
             node.visit_count +=1
 
             step=len(node.state)
-            if step<len(DRAFT_ORDER):
-                _, team=DRAFT_ORDER[step]
+            if step<len(self.draft_order):
+                _, team=self.draft_order[step]
                 #Team: 0=Radiant, 1=Dire
                 if team==1:
                     node.value_sum+=(1.0-value)

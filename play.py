@@ -40,8 +40,19 @@ class DraftSession:
         load_checkpoint(self.model, model_path)
         self.model.eval()
         
+        # Ask for First Pick Team
+        while True:
+            try:
+                fp = input("Who has First Pick? (0=Radiant, 1=Dire): ").strip()
+                self.first_pick_team = int(fp)
+                if self.first_pick_team in [0, 1]:
+                    break
+                print("Invalid input. Enter 0 or 1.")
+            except ValueError:
+                print("Invalid input. Enter 0 or 1.")
+
         #Initialize MCTS
-        self.mcts = DotaMCTS(self.model, device=self.device, c_puct=1.0)
+        self.mcts = DotaMCTS(self.model, device=self.device, c_puct=1.0, first_pick_team=self.first_pick_team)
 
         #Initialize the state
         self.history=[]
@@ -72,8 +83,8 @@ class DraftSession:
         if len(self.history)>=26: # Fixed to 22 (length of DRAFT_ORDER)
             return None, 0.0, [0,0,0]
         
-        #A. Prepare Input using Helper
-        seq_tensor, type_tensor, team_tensor, valid_tensor = prepare_model_input(self.history, self.device)
+        #B. Prepare Input
+        seq_tensor, type_tensor, team_tensor, valid_tensor = prepare_model_input(self.history, self.device, self.first_pick_team)
 
         #C. Forward Pass
         #C. Forward Pass (for Synergy & Initial Win Rate)

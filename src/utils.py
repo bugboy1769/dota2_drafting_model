@@ -4,14 +4,40 @@ from pathlib import Path
 
 # Standard Captain's Mode Draft Order (Team 0=Radiant, Team 1=Dire)
 # (is_pick, team)
-DRAFT_ORDER = [
-    (0, 0), (0, 1), (0, 1), (0, 0), (0, 1), (0, 1), (0, 0),# First Ban Phase (7 bans)
-    (1, 0), (1, 1), # First Pick Phase (2 picks)
-    (0, 0), (0, 0), (0, 1), # Second Ban Phase (3 bans)
-    (1, 1), (1, 0), (1, 0), (1, 1), (1, 1), (1, 0), # Second Pick Phase (6 picks)
-    (0, 0), (0, 1), (0, 1), (0, 0), # Third Ban Phase (4 bans)
-    (1, 0), (1, 1)                  # Third Pick Phase (2 picks)
+# Standard Captain's Mode Draft Structure (FP=First Pick Team, SP=Second Pick Team)
+# (is_pick, is_first_pick_team)
+# 0=Ban, 1=Pick
+# 0=FP, 1=SP
+DRAFT_STRUCTURE = [
+    (0, 0), (0, 1), (0, 0), (0, 1), (0, 0), (0, 1), (0, 0), # First Ban Phase (7 bans: FP, SP, FP, SP, FP, SP, FP) - Wait, is it alternating?
+    # Let's assume the structure in the original DRAFT_ORDER was correct for Radiant First Pick:
+    # (0,0), (0,1), (0,1), (0,0), (0,1), (0,1), (0,0) -> FP, SP, SP, FP, SP, SP, FP
+    # This matches the "3-2-2" or similar patterns.
+    # Let's stick to the pattern observed in the original code which the user said was "current patch".
+    (0, 0), (0, 1), (0, 1), (0, 0), (0, 1), (0, 1), (0, 0), # Bans 1
+    (1, 0), (1, 1), # Picks 1
+    (0, 0), (0, 0), (0, 1), # Bans 2
+    (1, 1), (1, 0), (1, 0), (1, 1), (1, 1), (1, 0), # Picks 2
+    (0, 0), (0, 1), (0, 1), (0, 0), # Bans 3
+    (1, 0), (1, 1) # Picks 3
 ]
+
+def get_draft_order(first_pick_team=0):
+    """
+    Generate the draft order based on who has first pick.
+    first_pick_team: 0 for Radiant, 1 for Dire.
+    Returns: List of (is_pick, team)
+    """
+    order = []
+    for is_pick, is_fp_team in DRAFT_STRUCTURE:
+        # If is_fp_team is 0 (FP), use first_pick_team.
+        # If is_fp_team is 1 (SP), use 1 - first_pick_team.
+        team = first_pick_team if is_fp_team == 0 else (1 - first_pick_team)
+        order.append((is_pick, team))
+    return order
+
+# Expose a default for backward compatibility (Radiant First Pick)
+DRAFT_ORDER = get_draft_order(0)
 
 def setup_logging(log_file: str=None):
     handlers=[logging.StreamHandler()]
@@ -41,7 +67,7 @@ def load_checkpoint(model, path, optimizer=None):
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return checkpoint.get('metrics', {})
 
-def prepare_model_input(history, device):
+def prepare_model_input(history, device, first_pick_team=0):
     """
     Convert a list of hero IDs (history) into model-ready tensors.
     Returns: seq_tensor, type_tensor, team_tensor, valid_tensor
@@ -54,26 +80,18 @@ def prepare_model_input(history, device):
         if i < seq_len:
             sequence[i] = h_id
     
-    # B. Type & Team Sequence (From DRAFT_ORDER)
+    # B. Type & Team Sequence (From Dynamic DRAFT_ORDER)
+    current_draft_order = get_draft_order(first_pick_team)
+    
     type_sequence = [0] * seq_len
     team_sequence = [0] * seq_len
     
-    for i in range(min(len(history), seq_len)):
-        # Use DRAFT_ORDER to fill past history context
-        # Note: For future steps (zeros), we can leave them as 0 or fill them.
-        # The model usually masks padding, but filling type/team for the whole sequence 
-        # (even future steps) is often better for the Transformer to know "what slot is this".
-        pass
-
-    # Actually, better strategy: Fill the ENTIRE sequence with DRAFT_ORDER info
-    # This tells the model "Slot 5 is a Radiant Pick", even if we haven't picked it yet.
-    # This is crucial for Positional Encoding context.
     for i in range(seq_len):
-        if i < len(DRAFT_ORDER):
-            is_pick, team = DRAFT_ORDER[i]
+        if i < len(current_draft_order):
+            is_pick, team = current_draft_order[i]
             type_sequence[i] = is_pick
             team_sequence[i] = team
-
+    
     # C. Valid Actions Mask
     valid_actions = [True] * 150
     for h_id in history:
