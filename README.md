@@ -2,7 +2,7 @@
 
 A deep learning system that learns the "Energy Landscape" of Dota 2 drafting. It moves beyond simple imitation learning by building a comprehensive World Model of the game's drafting phase, capable of understanding roles, lane dynamics, and win conditions.
 
-## 📡 Data Source
+## Data Source
 
 The model is trained on high-level professional matches fetched from the **OpenDota API**.
 *   **Input:** Captain's Mode draft sequences (Picks & Bans).
@@ -12,7 +12,7 @@ The model is trained on high-level professional matches fetched from the **OpenD
     *   Lane Outcomes (Gold Difference at 10 minutes).
     *   Match Winner.
 
-## 🧠 The World Model
+## The World Model
 
 The core of the system is a **Multi-Task Transformer** that maps the complex interactions of heroes into a high-dimensional vector space. It doesn't just memorize picks; it learns the underlying mechanics of the draft:
 
@@ -22,7 +22,7 @@ The core of the system is a **Multi-Task Transformer** that maps the complex int
 4.  **Synergy Head (The Mechanics):** Predicts the **Gold Difference** at 10 minutes for each lane.
     *   *Architecture:* Fuses the Draft Representation with the Predicted Roles to calculate precise, role-aware lane matchups.
 
-## 🧭 MCTS: Charting the Probability Space
+## MCTS: Charting the Probability Space (Under Construction)
 
 While the World Model captures the static rules and correlations of the game, **Monte Carlo Tree Search (MCTS)** captures the dynamic consequences.
 
@@ -30,7 +30,7 @@ While the World Model captures the static rules and correlations of the game, **
 *   **Probability Charting:** It explores the branching future of the draft, using the Policy Head to guide exploration and the Value Head to evaluate leaf nodes.
 *   **Result:** It finds the "Path of Least Resistance" to victory, effectively solving for the Nash Equilibrium of the draft rather than just copying human biases.
 
-## 📊 Performance
+## Performance
 
 *   **Top-5 Accuracy:** ~40% (Predicting human pro picks).
 *   **Top-1 Accuracy:** ~16%.
@@ -38,7 +38,7 @@ While the World Model captures the static rules and correlations of the game, **
 
 *Note: Accuracy is limited by the "Aleatoric Uncertainty" of drafting—there are often many valid picks in any given situation.*
 
-## 🚀 Features
+## Features
 
 ### Interactive Draft Assistant (`play.py`)
 A CLI tool to draft against the AI or use it as a companion.
