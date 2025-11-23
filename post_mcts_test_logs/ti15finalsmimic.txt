@@ -1,0 +1,361 @@
+Team Falcons vs XG
+
+Game1:
+
+Draft (0/24) > chen
+Added -> Chen
+/Users/shwetabhsingh/Documents/GitHub/dota2_drafting_model/.venv/lib/python3.10/site-packages/torch/nn/modules/transformer.py:515: UserWarning: The PyTorch API of nested tensors is in prototype stage and will change in the near future. We recommend specifying layout=torch.jagged when constructing a nested tensor, as this layout receives active development, has better operator coverage, and works with torch.compile. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/NestedTensorImpl.cpp:182.)
+  output = torch._nested_tensor_from_mask(
+Thinking (MCTS)...
+    (Win Probability: 50.8%)
+
+Draft (1/24) > naga siren
+Added -> Naga Siren
+Thinking (MCTS)...
+    (Win Probability: 50.2%)
+
+Draft (2/24) > bane
+Added -> Bane
+Thinking (MCTS)...
+    (Win Probability: 51.1%)
+
+Draft (3/24) > sand king
+Added -> Sand King
+Thinking (MCTS)...
+    (Win Probability: 51.3%)
+
+Draft (4/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 51.3%
+Predicted Lane Advantage (Radiant): Safe=-0.09, Mid=+0.02, Off=+0.04
+Recommended Picks:
+    - Marci: 44.0%
+    - Beastmaster: 40.0%
+    - Anti-Mage: 16.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (4/24) > puck
+Added -> Puck
+Thinking (MCTS)...
+    (Win Probability: 50.0%)
+
+Draft (5/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 50.0%
+Predicted Lane Advantage (Radiant): Safe=+0.08, Mid=-0.09, Off=+0.16
+Recommended Picks:
+    - Earthshaker: 26.0%
+    - Marci: 26.0%
+    - Anti-Mage: 24.0%
+    - Beastmaster: 24.0%
+    - Axe: 0.0%
+
+Draft (5/24) > sniper
+Added -> Sniper
+Thinking (MCTS)...
+    (Win Probability: 53.6%)
+
+Draft (6/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 53.6%
+Predicted Lane Advantage (Radiant): Safe=+0.30, Mid=-0.10, Off=+0.67
+Recommended Picks:
+    - Beastmaster: 58.0%
+    - Marci: 32.0%
+    - Anti-Mage: 10.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (6/24) > monkey king
+Added -> Monkey King
+Thinking (MCTS)...
+    (Win Probability: 53.1%)
+
+Draft (7/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 53.1%
+Predicted Lane Advantage (Radiant): Safe=-0.34, Mid=-0.29, Off=+0.30
+Recommended Picks:
+    - Earthshaker: 52.0%
+    - Marci: 42.0%
+    - Anti-Mage: 6.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (7/24) > mars
+Added -> Mars
+Thinking (MCTS)...
+    (Win Probability: 50.0%)
+
+Draft (8/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 50.0%
+Predicted Lane Advantage (Radiant): Safe=+0.08, Mid=-0.17, Off=-0.29
+Recommended Picks:
+    - Earthshaker: 40.0%
+    - Anti-Mage: 36.0%
+    - Beastmaster: 24.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (8/24) > pangolier 
+Added -> Pangolier
+Thinking (MCTS)...
+    (Win Probability: 46.9%)
+
+Draft (9/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 46.9%
+Predicted Lane Advantage (Radiant): Safe=+0.30, Mid=-0.15, Off=+0.11
+Recommended Picks:
+    - Anti-Mage: 42.0%
+    - Snapfire: 34.0%
+    - Hoodwink: 24.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (9/24) > earthshaker
+Added -> Earthshaker
+Thinking (MCTS)...
+    (Win Probability: 44.1%)
+
+Draft (10/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 44.1%
+Predicted Lane Advantage (Radiant): Safe=+0.19, Mid=-0.16, Off=+0.01
+Recommended Picks:
+    - Snapfire: 48.0%
+    - Hoodwink: 34.0%
+    - Anti-Mage: 18.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (10/24) > beast master
+Added -> Beastmaster
+Thinking (MCTS)...
+    (Win Probability: 51.7%)
+
+Draft (11/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 51.7%
+Predicted Lane Advantage (Radiant): Safe=-0.06, Mid=-0.34, Off=+0.10
+Recommended Picks:
+    - Troll Warlord: 36.0%
+    - Medusa: 34.0%
+    - Anti-Mage: 30.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (11/24) > troll warlord
+Added -> Troll Warlord
+Thinking (MCTS)...
+    (Win Probability: 47.0%)
+
+Draft (12/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 47.0%
+Predicted Lane Advantage (Radiant): Safe=+0.44, Mid=-0.28, Off=-0.02
+Recommended Picks:
+    - Snapfire: 46.0%
+    - Warlock: 16.0%
+    - Disruptor: 16.0%
+    - Hoodwink: 16.0%
+    - Anti-Mage: 6.0%
+
+Draft (12/24) > snapfire
+Added -> Snapfire
+Thinking (MCTS)...
+    (Win Probability: 53.9%)
+
+Draft (13/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 53.9%
+Predicted Lane Advantage (Radiant): Safe=+0.37, Mid=-0.42, Off=-0.01
+Recommended Picks:
+    - Disruptor: 30.0%
+    - Hoodwink: 28.0%
+    - Warlock: 24.0%
+    - Anti-Mage: 18.0%
+    - Axe: 0.0%
+
+Draft (13/24) > hoodwink
+Added -> Hoodwink
+Thinking (MCTS)...
+    (Win Probability: 52.1%)
+
+Draft (14/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 52.1%
+Predicted Lane Advantage (Radiant): Safe=+0.67, Mid=-0.07, Off=+0.06
+Recommended Picks:
+    - Enchantress: 32.0%
+    - Warlock: 26.0%
+    - Disruptor: 24.0%
+    - Anti-Mage: 18.0%
+    - Axe: 0.0%
+
+Draft (14/24) > elder titan
+Added -> Elder Titan
+Thinking (MCTS)...
+    (Win Probability: 44.7%)
+
+Draft (15/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 44.7%
+Predicted Lane Advantage (Radiant): Safe=+0.96, Mid=-0.03, Off=+0.53
+Recommended Picks:
+    - Anti-Mage: 100.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+    - Crystal Maiden: 0.0%
+    - Drow Ranger: 0.0%
+
+Draft (15/24) > enchantress
+Added -> Enchantress
+Thinking (MCTS)...
+    (Win Probability: 45.4%)
+
+Draft (16/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 45.4%
+Predicted Lane Advantage (Radiant): Safe=+0.75, Mid=-0.32, Off=+0.54
+Recommended Picks:
+    - Sven: 38.0%
+    - Anti-Mage: 36.0%
+    - Templar Assassin: 26.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (16/24) > sven
+Added -> Sven
+Thinking (MCTS)...
+    (Win Probability: 54.1%)
+
+Draft (17/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 54.1%
+Predicted Lane Advantage (Radiant): Safe=+0.99, Mid=-0.16, Off=+0.60
+Recommended Picks:
+    - Ursa: 60.0%
+    - Medusa: 26.0%
+    - Anti-Mage: 8.0%
+    - Templar Assassin: 6.0%
+    - Axe: 0.0%
+
+Draft (17/24) > ursa
+Added -> Ursa
+Thinking (MCTS)...
+    (Win Probability: 53.9%)
+
+Draft (18/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 53.9%
+Predicted Lane Advantage (Radiant): Safe=+1.28, Mid=-0.31, Off=-0.34
+Recommended Picks:
+    - Enigma: 74.0%
+    - Slardar: 18.0%
+    - Anti-Mage: 8.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (18/24) > huskar
+Added -> Huskar
+Thinking (MCTS)...
+    (Win Probability: 48.5%)
+
+Draft (19/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 48.5%
+Predicted Lane Advantage (Radiant): Safe=+1.25, Mid=-0.45, Off=-0.00
+Recommended Picks:
+    - Queen of Pain: 44.0%
+    - Storm Spirit: 36.0%
+    - Ember Spirit: 12.0%
+    - Anti-Mage: 6.0%
+    - Leshrac: 2.0%
+
+Draft (19/24) > leshrac
+Added -> Leshrac
+Thinking (MCTS)...
+    (Win Probability: 41.1%)
+
+Draft (20/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 41.1%
+Predicted Lane Advantage (Radiant): Safe=+0.81, Mid=-0.33, Off=-0.30
+Recommended Picks:
+    - Storm Spirit: 40.0%
+    - Queen of Pain: 34.0%
+    - Ember Spirit: 20.0%
+    - Anti-Mage: 6.0%
+    - Axe: 0.0%
+
+Draft (20/24) > storm spirit
+Added -> Storm Spirit
+Thinking (MCTS)...
+    (Win Probability: 50.7%)
+
+Draft (21/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 50.7%
+Predicted Lane Advantage (Radiant): Safe=+1.02, Mid=-0.33, Off=-0.20
+Recommended Picks:
+    - Queen of Pain: 76.0%
+    - Ember Spirit: 20.0%
+    - Anti-Mage: 4.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (21/24) > doom
+Added -> Doom
+
+Draft (22/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 45.8%
+Predicted Lane Advantage (Radiant): Safe=+1.17, Mid=-0.40, Off=-0.05
+Recommended Picks:
+    - Queen of Pain: 46.0%
+    - Ember Spirit: 34.0%
+    - Shadow Fiend: 16.0%
+    - Anti-Mage: 4.0%
+    - Axe: 0.0%
+
+Draft (22/24) > queen of pain
+Added -> Queen of Pain
+
+Draft (23/24) > suggest
+Thinking (MCTS)...
+
+Estimated Win Probability: 53.0%
+Predicted Lane Advantage (Radiant): Safe=+0.74, Mid=-0.41, Off=-0.42
+Recommended Picks:
+    - Ember Spirit: 82.0%
+    - Invoker: 12.0%
+    - Anti-Mage: 6.0%
+    - Axe: 0.0%
+    - Bloodseeker: 0.0%
+
+Draft (23/24) > ember spirit 
+Added -> Ember Spirit
+
+Draft (24/24) > 

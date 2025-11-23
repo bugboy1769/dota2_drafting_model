@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 from src.model import DraftModel
 from src.utils import load_checkpoint, prepare_model_input
+from src.dota_mcts import DotaMCTS
 
 class DraftSession:
     def __init__(self, config_path, model_path):
@@ -38,6 +39,9 @@ class DraftSession:
         #Load trained weights
         load_checkpoint(self.model, model_path)
         self.model.eval()
+        
+        #Initialize MCTS
+        self.mcts = DotaMCTS(self.model, device=self.device, c_puct=1.0)
 
         #Initialize the state
         self.history=[]
@@ -72,23 +76,32 @@ class DraftSession:
         seq_tensor, type_tensor, team_tensor, valid_tensor = prepare_model_input(self.history, self.device)
 
         #C. Forward Pass
+        #C. Forward Pass (for Synergy & Initial Win Rate)
         with torch.no_grad():
             #action_logits -> raw scores for next pick
             #win_prob -> value heads prediction for winning with predicted state
             action_logits, win_prob, role_logits, synergy_preds = self.model(seq_tensor, type_tensor, team_tensor, valid_tensor)
         
-        #D. Process Output
-        #Apply softmax for percentages
-        probs=torch.softmax(action_logits[0], dim=0)
-
-        top_probs, top_indices=torch.topk(probs, 5)
-
-        suggestions=[]
-        for p, idx in zip(top_probs, top_indices):
-            h_id=idx.item() + 1
-            name=self.id_to_name.get(h_id, "Unknown")
-            suggestions.append((name, p.item()))
+        #D. Run MCTS for Better Suggestions
+        print("Thinking (MCTS)...")
+        root = self.mcts.search(self.history, num_simulations=50) # 50 sims for speed
+        mcts_probs = self.mcts.get_action_probs(root)
         
+        # Extract top 5 from MCTS
+        suggestions = []
+        for action, prob in mcts_probs[:5]:
+            name = self.id_to_name.get(action, "Unknown")
+            suggestions.append((name, prob))
+        
+        # If MCTS fails (e.g. terminal state), fallback to raw model
+        if not suggestions:
+             probs = torch.softmax(action_logits[0], dim=0)
+             top_probs, top_indices = torch.topk(probs, 5)
+             for p, idx in zip(top_probs, top_indices):
+                h_id = idx.item() + 1
+                name = self.id_to_name.get(h_id, "Unknown")
+                suggestions.append((name, p.item()))
+
         return suggestions, win_prob.item(), synergy_preds[0].tolist()
     
 #INTERACTIVE LOOP

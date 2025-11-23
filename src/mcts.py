@@ -51,7 +51,32 @@ class MCTS:
             self._backpropagate(node, value)
             
         # 4. Return best action (usually most visited)
-        return self._get_best_action(root)
+        # 4. Return the root node so the caller can extract stats
+        return root
+
+    def get_action_probs(self, root, temperature=1.0):
+        """
+        Get the probability distribution over actions based on visit counts.
+        Returns: [(action, probability), ...] sorted by probability.
+        """
+        visit_counts = [(action, child.visit_count) for action, child in root.children.items()]
+        
+        if not visit_counts:
+            return []
+            
+        # Apply temperature
+        # If temp -> 0, argmax. If temp -> inf, uniform.
+        # For now, simple normalization (temp=1)
+        total_visits = sum(vc for _, vc in visit_counts)
+        
+        probs = []
+        for action, count in visit_counts:
+            p = count / total_visits
+            probs.append((action, p))
+            
+        # Sort by probability descending
+        probs.sort(key=lambda x: x[1], reverse=True)
+        return probs
 
     def _select_child(self, node):
         """Select the child with the highest UCB score."""

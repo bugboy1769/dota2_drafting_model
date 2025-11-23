@@ -117,6 +117,14 @@ class DraftModel(nn.Module):
         #Pass to transformer
         x=self.transformer(x, src_key_padding_mask=padding_mask)
 
+        # FIX: Handle compressed output from Transformer (if it drops masked tokens)
+        if x.size(1) != 24:
+            full_x = torch.zeros(x.size(0), 24, x.size(2), device=x.device)
+            # Scatter the compressed x back into the full tensor using the mask
+            # We flatten x to [total_valid_tokens, embed_dim] and assign to unmasked positions
+            full_x[~padding_mask] = x.reshape(-1, x.size(-1))
+            x = full_x
+
         #Extract draft representation
         lengths=(~padding_mask).sum(dim=1)-1
         batch_indices=torch.arange(x.size(0), device=x.device)
