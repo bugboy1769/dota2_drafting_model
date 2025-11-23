@@ -14,7 +14,7 @@ The model is trained on high-level professional matches fetched from the **OpenD
 
 ## The World Model
 
-The core of the system is a **Multi-Task Transformer** that maps the complex interactions of heroes into a high-dimensional vector space. It doesn't just memorize picks; it learns the underlying mechanics of the draft:
+The core of the system is a **Multi-Task Transformer** that maps the complex interactions of heroes into a high-dimensional vector space. This is so that it doesn't just memorize picks; it learns the underlying mechanics of the draft by building some form of a world model (Hamiltonian/Energy Landscape):
 
 1.  **Policy Head (The Prior):** Predicts the most likely next move based on professional trends.
 2.  **Value Head (The Evaluator):** Estimates the win probability of any given draft state.
@@ -24,7 +24,7 @@ The core of the system is a **Multi-Task Transformer** that maps the complex int
 
 ## MCTS: Charting the Probability Space (Under Construction)
 
-While the World Model captures the static rules and correlations of the game, **Monte Carlo Tree Search (MCTS)** captures the dynamic consequences.
+While the World Model captures the static rules and correlations of the game, **Monte Carlo Tree Search (MCTS)** captures the dynamic consequences (The path integral within the Hamiltonian that optimizes for winning).
 
 *   **Adversarial Search:** Instead of assuming a cooperative environment, MCTS simulates the opponent's best responses (Minimax).
 *   **Probability Charting:** It explores the branching future of the draft, using the Policy Head to guide exploration and the Value Head to evaluate leaf nodes.
