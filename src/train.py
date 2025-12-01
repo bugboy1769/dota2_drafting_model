@@ -90,6 +90,15 @@ class Trainer:
 
             #Compute losses
             policy_loss=self.policy_criterion(action_logits, target_action)
+            # Clamp win_prob to avoid numerical instability
+            win_prob = torch.clamp(win_prob, min=1e-7, max=1-1e-7)
+            
+            # DEBUG: Check for invalid values
+            if torch.isnan(win_prob).any() or torch.isnan(outcome).any():
+                print(f"NaN Detected! WinProb: {torch.isnan(win_prob).any()}, Outcome: {torch.isnan(outcome).any()}")
+            if (outcome < 0).any() or (outcome > 1).any():
+                print(f"Outcome out of bounds! Min: {outcome.min()}, Max: {outcome.max()}")
+                
             value_loss=self.value_criterion(win_prob.squeeze(), outcome)
             
             # Role Loss: Flatten [Batch, Seq] -> [Batch*Seq]
@@ -184,7 +193,8 @@ class Trainer:
                 self.best_val_loss=val_metrics['val_loss']
                 self.epochs_without_improvement=0
 
-                model_path=Path(self.config['path']['model_dir'])/"best_model.pt"
+                model_name = self.config['path'].get('model_name', 'best_model.pt')
+                model_path=Path(self.config['path']['model_dir'])/model_name
                 save_checkpoint(self.model, self.optimizer, epoch, val_metrics, model_path)
                 self.logger.info(f"Best Model Saved!")
             else:

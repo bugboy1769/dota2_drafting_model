@@ -241,6 +241,10 @@ class DataCollector:
             # Build history (only valid heroes)
             history = [a for a in picks_bans[:step] if 1 <= a['hero_id'] <= 150]
             
+            # Skip empty history (Transformer cannot handle all-padding)
+            if len(history) == 0:
+                continue
+            
             # Build hero sequence (pad to 24)
             hero_sequence = [0] * 24
             for i, action in enumerate(history[:24]):  # Cap at 24
@@ -272,7 +276,7 @@ class DataCollector:
             
             # Determine outcome based on team
             team = current_action['team']
-            outcome = 1.0 if (team == 0 and radiant_win) or (team == 1 and not radiant_win) else 0.0
+            outcome = 0.99 if (team == 0 and radiant_win) or (team == 1 and not radiant_win) else 0.01
             
             examples.append({
                 'hero_sequence': hero_sequence,
