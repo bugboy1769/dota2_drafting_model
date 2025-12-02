@@ -42,7 +42,7 @@ While the World Model captures the static rules and correlations of the game, **
 
 ![Training Curves](training_curves.png)
 
-## 🧠 Model Internals: Embedding Visualization
+## Model Internals: Embedding Visualization
 
 The model learns a **128-dimensional embedding space** for all Dota 2 heroes. Using UMAP dimensionality reduction, we can visualize how the model internally represents hero relationships:
 
@@ -59,7 +59,7 @@ This visualization proves the model isn't just memorizing picks - it's learning 
 
 ## Features
 
-### 🎨 Interactive Visualization App (`app.py`)
+### Interactive Visualization App (`app.py`)
 A Streamlit web app to explore the model's learned embeddings in 3D.
 
 **Features:**
