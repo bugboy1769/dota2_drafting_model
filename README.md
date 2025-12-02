@@ -40,11 +40,42 @@ While the World Model captures the static rules and correlations of the game, **
 
 ## Training Curves
 
-![alt text](training_curves.png)
+![Training Curves](training_curves.png)
+
+## 🧠 Model Internals: Embedding Visualization
+
+The model learns a **128-dimensional embedding space** for all Dota 2 heroes. Using UMAP dimensionality reduction, we can visualize how the model internally represents hero relationships:
+
+![UMAP Embedding Visualization](plotsandcurves/UMAP_representation.png)
+
+### What This Shows
+
+**Key Observations:**
+- **Emergent Clustering by Attribute**: The model naturally groups heroes by their primary attribute (Strength/Agility/Intelligence) **without being explicitly told about attributes**. This clustering emerges purely from learning draft patterns, synergies, and win conditions.
+- **Semantic Proximity**: Heroes close together in this space are considered "similar" by the model - they get picked in similar contexts, work well together, or fill similar roles.
+- **Role Understanding**: The spatial organization suggests the model has learned meaningful abstractions about hero archetypes (carries cluster near each other, supports form their own region, etc.).
+
+This visualization proves the model isn't just memorizing picks - it's learning the underlying structure of the game!
 
 ## Features
 
-### Interactive Draft Assistant (`play.py`)
+### 🎨 Interactive Visualization App (`app.py`)
+A Streamlit web app to explore the model's learned embeddings in 3D.
+
+**Features:**
+- **3D Scatter Plot**: Rotate and zoom to explore the hero embedding space
+- **Algorithm Selection**: Switch between UMAP (local clusters) and PCA (global structure)
+- **Attribute Coloring**: Heroes colored by primary attribute (Str/Agi/Int)
+- **Interactive Tooltips**: Hover over any hero to see its name and roles
+
+**Launch the app:**
+```bash
+streamlit run app.py
+```
+
+Then navigate to `http://localhost:8501` in your browser.
+
+### 🎮 Interactive Draft Assistant (`play.py`)
 A CLI tool to draft against the AI or use it as a companion.
 *   **Real-time Suggestions:** Top 5 recommended picks/bans.
 *   **Win Rate Estimation:** Live update of your winning chances.
@@ -52,27 +83,49 @@ A CLI tool to draft against the AI or use it as a companion.
 
 ## 🛠️ Setup & Usage
 
-1.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+### Prerequisites
+```bash
+pip install -r requirements.txt
+```
 
-2.  **Collect Data:**
+If you want to use the visualization app, also install:
+```bash
+pip install streamlit plotly umap-learn
+```
+
+### Training Pipeline
+
+1.  **Collect Data:**
     ```bash
     python scripts/01_collect_data.py
     ```
 
-3.  **Process Data:**
+2.  **Process Data:**
     ```bash
     python scripts/02_process_data.py
     ```
 
-4.  **Train:**
+3.  **Train:**
     ```bash
     python scripts/03_train.py
     ```
 
-5.  **Play/Test:**
-    ```bash
-    python play.py
-    ```
+### Usage
+
+**Draft Assistant (CLI):**
+```bash
+python play.py
+```
+
+**Embedding Visualization (Web App):**
+```bash
+streamlit run app.py
+```
+
+**Standalone Visualization (Generates HTML):**
+```bash
+python scripts/visualize_embeddings_standalone.py --algo umap
+# or
+python scripts/visualize_embeddings_standalone.py --algo pca
+# Opens embedding_visualization.html in your browser
+```

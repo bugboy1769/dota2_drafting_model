@@ -15,6 +15,10 @@ logs/
 *.pkl
 *.npy
 
+# Generated Visualizations
+embedding_visualization.html
+*_export.csv
+
 # IDE
 .vscode/
 .idea/
