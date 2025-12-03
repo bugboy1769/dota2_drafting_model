@@ -46,7 +46,7 @@ While the World Model captures the static rules and correlations of the game, **
 
 The model learns a **128-dimensional embedding space** for all Dota 2 heroes. Using UMAP dimensionality reduction, we can visualize how the model internally represents hero relationships:
 
-![UMAP Embedding Visualization](plotsandcurves/UMAP_representation.png)
+![UMAP Embedding Visualization](plotsandcurves/UMAP_front.png)
 
 ### What This Shows
 
