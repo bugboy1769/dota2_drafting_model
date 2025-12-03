@@ -55,7 +55,7 @@ The model learns a **128-dimensional embedding space** for all Dota 2 heroes. Us
 - **Semantic Proximity**: Heroes close together in this space are considered "similar" by the model - they get picked in similar contexts, work well together, or fill similar roles.
 - **Role Understanding**: The spatial organization suggests the model has learned meaningful abstractions about hero archetypes (carries cluster near each other, supports form their own region, etc.).
 
-This visualization proves the model isn't just memorizing picks - it's learning the underlying structure of the game!
+This visualization proves the model isn't just memorizing picks - it's learning the underlying structure of the game. One very interesting phenomena is that since the model is trained to predict drafts, you can see that the clustering has placed most heroes of similar attributes together, there are exceptions, and these are the heroes that might be a different attribute, but in play they behave functionally similar to the attribute they are grouped up with (which is a Dota peculiarity), for example, in the cluster of agility heroes, we can spot both Sven and Lifestealer, and it makes sense, because these are both played as carries!
 
 ## Features
 
