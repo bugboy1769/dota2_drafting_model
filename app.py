@@ -60,7 +60,7 @@ st.title("DOTA2 AI Neural Internals")
 model, hero_map=load_model_and_data()
 if model and hero_map:
     st.sidebar.success("Model and data loaded successfully")
-    tab1, tab2=st.tabs(["Embedding Visualisation", "Draft Assistant"])
+    tab1, tab2, tab3=st.tabs(["Embedding Visualisation", "Draft Assistant", "Draft Analysis"])
     with tab1:
         st.header("Hero Embedding Landscape")
         st.markdown("""
@@ -103,18 +103,23 @@ if model and hero_map:
                 df=pd.DataFrame(plot_data)
                 
                 #3. Dimensionality Reduction
-                if algo=='PCA (Linear)':
-                    reducer=PCA(n_components=3)
-                    projections=reducer.fit_transform(vectors)
-                else:
-                    #UMAP
-                    reducer=umap.UMAP(
-                        n_components=3,
-                        n_neighbors=3,
-                        min_dist=0.1,
-                        metric='cosine'
-                    )
-                    projections=reducer.fit_transform(vectors)
+                try:
+                    if algo == "UMAP (Recommended)":
+                        reducer = umap.UMAP(
+                            n_components=3,
+                            n_neighbors=3,
+                            min_dist=0.1,
+                            metric='cosine',
+                            random_state=42
+                        )
+                        projections = reducer.fit_transform(vectors)
+                    else: # PCA (Linear)
+                        reducer = PCA(n_components=3)
+                        projections = reducer.fit_transform(vectors)
+                except Exception as e:
+                    st.error(f"Dimensionality Reduction Failed: {e}")
+                    st.info("Tip: If UMAP failed, try selecting PCA. UMAP can have issues on M1 Macs with Numba.")
+                    st.stop()
                 
                 #Add coords to DF
                 df['x']=projections[:, 0]
@@ -151,5 +156,54 @@ if model and hero_map:
                     st.write("Try switching to PCA if UMAP isn't working.")
     with tab2:
         st.write("Coming Up: Draft Assistant Interface")
+
+    with tab3:
+        st.header("Draft Probability Space Analysis")
+        st.markdown("""
+        Visualize the **Draft Trajectory** through the model's 128D state space.
+        * **Win Probability**: The "elevation" of the current state.
+        * **Entropy**: The "uncertainty" (fog) at the current state.
+        """)
+        
+        from src.draft_analyzer import DraftAnalyzer, load_sample_draft
+        analyzer = DraftAnalyzer(model)
+        
+        # UI: Draft Builder
+        if 'draft_seq' not in st.session_state:
+            st.session_state.draft_seq = load_sample_draft()
+            
+        if st.button("Analyze Sample Draft"):
+            # Run Analysis
+            results = analyzer.analyze_draft_sequence(st.session_state.draft_seq)
+            key_moments = analyzer.find_turning_points(
+                results['win_probs'], results['entropies'], results['turns']
+            )
+            
+            # Plot 1: Win Probability
+            st.subheader("1. Win Probability Trajectory")
+            import plotly.graph_objects as go
+            fig_win = go.Figure()
+            fig_win.add_trace(go.Scatter(
+                x=results['turns'], y=results['win_probs'],
+                mode='lines+markers', name='Win %',
+                line=dict(color='#00ff00', width=3)
+            ))
+            fig_win.add_hline(y=0.5, line_dash="dash", line_color="gray")
+            st.plotly_chart(fig_win, use_container_width=True)
+            
+            # Plot 2: Entropy
+            st.subheader("2. Certainty (Entropy) Evolution")
+            fig_ent = go.Figure()
+            fig_ent.add_trace(go.Scatter(
+                x=results['turns'], y=results['entropies'],
+                mode='lines+markers', name='Entropy',
+                line=dict(color='#ff00ff', width=3),
+                fill='tozeroy'
+            ))
+            st.plotly_chart(fig_ent, use_container_width=True)
+            
+            # Key Moments
+            st.subheader("3. Key Moments")
+            st.json(key_moments)
 
                 
