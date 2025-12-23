@@ -108,7 +108,8 @@ class Trainer:
             synergy_loss=self.synergy_criterion(synergy_preds, lane_outcome)
             
             # Total Loss (Weighted)
-            loss=policy_loss + 0.5*value_loss + 0.2*role_loss + 0.5*synergy_loss
+            # Boosted Value Loss to 1.0 to improve MCTS calibration
+            loss=policy_loss + 1.0*value_loss + 0.2*role_loss + 0.5*synergy_loss
 
             #Backward pass
             self.optimizer.zero_grad()
