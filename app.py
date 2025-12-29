@@ -70,7 +70,7 @@ if model and hero_map:
     with tab1:
         st.header("Hero Embedding Landscape")
         st.markdown("""
-        This Visualisation flattends the model's internal 128 dimensional representation into 3D.
+        This Visualisation flattends the model's internal 256 dimensional representation into 3D.
         * **Closer Points**: The model thinks these heroes are similar.
         * **Clusters**: Roles or Archetypes (e.g., "Hard Carries, "Save Heroes)
         """)
