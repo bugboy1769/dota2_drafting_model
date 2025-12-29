@@ -40,7 +40,7 @@ While the World Model captures the static rules and correlations of the game, **
 
 ## Training Curves
 
-![Training Curves](training_curves.png)
+![Training Curves](plotsandcurves/training_curves.png)
 
 ## Model Internals: Embedding Visualization
 
