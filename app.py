@@ -431,7 +431,7 @@ if model and hero_map:
     with tab3:
         st.header("Draft Probability Space Analysis")
         st.markdown("""
-        Visualize the **Draft Trajectory** through the model's 128D state space.
+        Visualize the **Draft Trajectory** through the model's 256D state space.
         * **Win Probability**: The "elevation" of the current state.
         * **Entropy**: The "uncertainty" (fog) at the current state.
         """)
